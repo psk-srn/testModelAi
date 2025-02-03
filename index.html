@@ -3,39 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TensorFlow Lite Web Demo</title>
+    <title>Image Classification with TFLite</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite"></script>
 </head>
 <body>
-    <h1>TensorFlow Lite on Web</h1>
-    <button onclick="runModel()">Predict</button>
-    <p id="result">Result: </p>
+    <h1>Upload Image for AI Detection</h1>
+    <input type="file" id="uploadImage" accept="image/*">
+    <br><br>
+    <img id="preview" width="224" style="display:none;">
+    <p id="result">Prediction: </p>
 
     <script>
         let model;
-        
+
+        // โหลดโมเดล TFLite
         async function loadModel() {
             model = await tflite.loadTFLiteModel("https://psk-srn.github.io/testModelAi/assets/model.tflite");
             console.log("✅ Model Loaded Successfully!");
         }
 
-        async function runModel() {
-            if (!model) {
-                alert("Model is not loaded yet!");
-                return;
-            }
-            
-            // ตัวอย่างอินพุต (แก้ไขให้ตรงกับโมเดลของคุณ)
-            let inputTensor = tf.tensor([[0.1, 0.2, 0.3, 0.4]]);
-            
-            // รันโมเดล
-            let outputTensor = model.predict(inputTensor);
-            let outputArray = await outputTensor.data();
+        // แปลงภาพเป็น Tensor
+        async function processImage(imageElement) {
+            let tensor = tf.browser.fromPixels(imageElement)   // แปลงเป็น Tensor
+                .resizeNearestNeighbor([224, 224])  // ปรับขนาดภาพให้ตรงกับโมเดล
+                .toFloat()  
+                .div(tf.scalar(255))  // Normalize 0-1
+                .expandDims();  // เพิ่ม Batch Dimension [1, 224, 224, 3]
 
-            // แสดงผลลัพธ์
-            document.getElementById("result").innerText = "Result: " + outputArray;
+            return tensor;
         }
+
+        // ตรวจจับเมื่ออัปโหลดภาพ
+        document.getElementById("uploadImage").addEventListener("change", async function(event) {
+            let file = event.target.files[0];
+            let imgElement = document.getElementById("preview");
+
+            if (file) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    imgElement.src = e.target.result;
+                    imgElement.style.display = "block";
+                };
+                reader.readAsDataURL(file);
+
+                // รอโหลดภาพเสร็จ แล้วแปลงเป็น Tensor
+                setTimeout(async () => {
+                    let inputTensor = await processImage(imgElement);
+
+                    // รันโมเดล
+                    let outputTensor = model.predict(inputTensor);
+                    let outputArray = await outputTensor.data();
+
+                    document.getElementById("result").innerText = "Prediction: " + outputArray;
+                }, 1000);
+            }
+        });
 
         loadModel();
     </script>
