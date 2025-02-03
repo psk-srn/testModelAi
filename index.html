@@ -16,26 +16,25 @@
 
     <script>
         let model;
-        const labels = ["army worm", "gerris", "lady bug", "rice leafhopper", "yellow rice borer"];  // 🔹 แก้ตรงนี้ให้ตรงกับโมเดลของคุณ
+        const labels = ["army worm", "gerris", "lady bug", "rice leafhopper", "yellow rice borer"];  
 
+        // ✅ โหลดโมเดลก่อน
         async function loadModel() {
-            model = await tflite.loadTFLiteModel("https://psk-srn.github.io/testModelAi/assets/model.tflite");
-            console.log("✅ Model Loaded Successfully!");
-        }
-        
-        if (!model) {
-            console.error("❌ Model not loaded!");
-            return;
+            try {
+                model = await tflite.loadTFLiteModel("https://psk-srn.github.io/testModelAi/assets/model.tflite");
+                console.log("✅ Model Loaded Successfully!");
+            } catch (error) {
+                console.error("❌ Model loading failed:", error);
+            }
         }
 
-
+        // ✅ ประมวลผลรูปภาพให้ตรงกับโมเดล
         async function processImage(imageElement) {
-            let tensor = tf.browser.fromPixels(imageElement)
-                .resizeNearestNeighbor([100, 100])
+            return tf.browser.fromPixels(imageElement)
+                .resizeNearestNeighbor([224, 224]) // 🔹 ปรับให้ตรงกับโมเดล
                 .toFloat()
                 .div(tf.scalar(255))
                 .expandDims();
-            return tensor;
         }
 
         document.getElementById("uploadImage").addEventListener("change", async function(event) {
@@ -51,18 +50,27 @@
                 reader.readAsDataURL(file);
 
                 setTimeout(async () => {
+                    if (!model) {
+                        console.error("❌ Model not loaded yet!");
+                        return;
+                    }
+
                     let inputTensor = await processImage(imgElement);
                     let outputTensor = model.predict(inputTensor);
                     let outputArray = await outputTensor.data();
 
-                    // 🔹 แปลงค่าออกมาเป็นชื่อ Class
-                    let index = outputArray.indexOf(Math.max(...outputArray));
-                    document.getElementById("result").innerText = "Prediction: " + labels[index];
+                    // ✅ ใช้ `tf.argMax()` แทน `indexOf()`
+                    let indexTensor = tf.argMax(outputTensor, 1);
+                    let index = (await indexTensor.data())[0];
+
+                    console.log("🔍 Output:", outputArray);
+                    console.log("🔍 Predicted Index:", index);
+                    document.getElementById("result").innerText = "Prediction: " + (labels[index] || "Unknown");
                 }, 1000);
             }
         });
 
-        loadModel();
+        loadModel(); // 🔹 โหลดโมเดลตอนเริ่ม
     </script>
 </body>
 </html>
