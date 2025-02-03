@@ -25,7 +25,7 @@
 
         async function processImage(imageElement) {
             let tensor = tf.browser.fromPixels(imageElement)
-                .resizeNearestNeighbor([224, 224])
+                .resizeNearestNeighbor([100, 100])
                 .toFloat()
                 .div(tf.scalar(255))
                 .expandDims();
