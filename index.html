@@ -16,25 +16,22 @@
 
     <script>
         let model;
+        const labels = ['army worm', 'gerris', 'lady bug', 'rice leafhopper', 'yellow rice borer'];  // 🔹 แก้ตรงนี้ให้ตรงกับโมเดลของคุณ
 
-        // โหลดโมเดล TFLite
         async function loadModel() {
-            model = await tflite.loadTFLiteModel("https://psk-srn.github.io/testModelAi/assets/model.tflite");
+            model = await tflite.loadTFLiteModel("https://your-username.github.io/tflite-web-demo/assets/model.tflite");
             console.log("✅ Model Loaded Successfully!");
         }
 
-        // แปลงภาพเป็น Tensor
         async function processImage(imageElement) {
-            let tensor = tf.browser.fromPixels(imageElement)   // แปลงเป็น Tensor
-                .resizeNearestNeighbor([224, 224])  // ปรับขนาดภาพให้ตรงกับโมเดล
-                .toFloat()  
-                .div(tf.scalar(255))  // Normalize 0-1
-                .expandDims();  // เพิ่ม Batch Dimension [1, 224, 224, 3]
-
+            let tensor = tf.browser.fromPixels(imageElement)
+                .resizeNearestNeighbor([224, 224])
+                .toFloat()
+                .div(tf.scalar(255))
+                .expandDims();
             return tensor;
         }
 
-        // ตรวจจับเมื่ออัปโหลดภาพ
         document.getElementById("uploadImage").addEventListener("change", async function(event) {
             let file = event.target.files[0];
             let imgElement = document.getElementById("preview");
@@ -47,15 +44,14 @@
                 };
                 reader.readAsDataURL(file);
 
-                // รอโหลดภาพเสร็จ แล้วแปลงเป็น Tensor
                 setTimeout(async () => {
                     let inputTensor = await processImage(imgElement);
-
-                    // รันโมเดล
                     let outputTensor = model.predict(inputTensor);
                     let outputArray = await outputTensor.data();
 
-                    document.getElementById("result").innerText = "Prediction: " + outputArray;
+                    // 🔹 แปลงค่าออกมาเป็นชื่อ Class
+                    let index = outputArray.indexOf(Math.max(...outputArray));
+                    document.getElementById("result").innerText = "Prediction: " + labels[index];
                 }, 1000);
             }
         });
