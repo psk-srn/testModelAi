@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Classification with TFLite</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.3"></script>
-
 </head>
 <body>
     <h1>Upload Image for AI Detection</h1>
@@ -40,6 +39,7 @@
         // เรียกโหลดโมเดล
         loadModel();
 
+        // เมื่ออัปโหลดภาพ
         document.getElementById("uploadImage").addEventListener("change", async function(event) {
             let file = event.target.files[0];
             let imgElement = document.getElementById("preview");
@@ -52,6 +52,7 @@
                     imgElement.onload = async function () {
                         if (!model) {
                             console.error("❌ Model not loaded yet!");
+                            document.getElementById("result").innerText = "Model loading failed!";
                             return;
                         }
 
@@ -64,6 +65,7 @@
                         let indexTensor = tf.argMax(outputTensor, 1);
                         let index = (await indexTensor.data())[0];
 
+                        // แสดงผลทำนาย
                         document.getElementById("result").innerText = "Prediction: " + (labels[index] || "Unknown");
                     };
                 };
