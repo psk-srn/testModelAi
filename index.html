@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TensorFlow Lite Web Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite"></script>
+</head>
+<body>
+    <h1>TensorFlow Lite on Web</h1>
+    <button onclick="runModel()">Predict</button>
+    <p id="result">Result: </p>
+
+    <script>
+        let model;
+        
+        async function loadModel() {
+            model = await tflite.loadTFLiteModel("assets/model.tflite");
+            console.log("✅ Model Loaded Successfully!");
+        }
+
+        async function runModel() {
+            if (!model) {
+                alert("Model is not loaded yet!");
+                return;
+            }
+            
+            // ตัวอย่างอินพุต (แก้ไขให้ตรงกับโมเดลของคุณ)
+            let inputTensor = tf.tensor([[0.1, 0.2, 0.3, 0.4]]);
+            
+            // รันโมเดล
+            let outputTensor = model.predict(inputTensor);
+            let outputArray = await outputTensor.data();
+
+            // แสดงผลลัพธ์
+            document.getElementById("result").innerText = "Result: " + outputArray;
+        }
+
+        loadModel();
+    </script>
+</body>
+</html>
