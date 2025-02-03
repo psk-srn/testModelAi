@@ -16,8 +16,9 @@
 
     <script>
         let model;
-        const labels = ["army worm", "gerris", "lady bug", "rice leafhopper", "yellow rice borer"];
+        const labels = ["army worm", "gerris", "lady bug", "rice leafhopper", "yellow rice borer"];  
 
+        // ✅ โหลดโมเดลก่อน
         async function loadModel() {
             try {
                 model = await tflite.loadTFLiteModel("https://psk-srn.github.io/testModelAi/assets/model.tflite");
@@ -27,13 +28,17 @@
             }
         }
 
+        // ✅ ประมวลผลรูปภาพให้ตรงกับโมเดล
         async function processImage(imageElement) {
             return tf.browser.fromPixels(imageElement)
-                .resizeNearestNeighbor([224, 224])
+                .resizeNearestNeighbor([224, 224]) // 🔹 ปรับให้ตรงกับโมเดล
                 .toFloat()
                 .div(tf.scalar(255))
                 .expandDims();
         }
+
+        // เรียกโหลดโมเดล
+        loadModel();
 
         document.getElementById("uploadImage").addEventListener("change", async function(event) {
             let file = event.target.files[0];
@@ -42,25 +47,29 @@
             if (file) {
                 let reader = new FileReader();
                 reader.onload = function(e) {
-                    console.log("📷 Image loaded:", e.target.result); // ตรวจสอบไฟล์ที่โหลด
                     imgElement.src = e.target.result;
                     imgElement.style.display = "block"; // ทำให้รูปแสดง
+                    imgElement.onload = async function () {
+                        if (!model) {
+                            console.error("❌ Model not loaded yet!");
+                            return;
+                        }
+
+                        // ✅ ประมวลผลและทำนาย
+                        let inputTensor = await processImage(imgElement);
+                        let outputTensor = model.predict(inputTensor);
+                        let outputArray = await outputTensor.data();
+
+                        // ✅ ใช้ tf.argMax() แทน indexOf()
+                        let indexTensor = tf.argMax(outputTensor, 1);
+                        let index = (await indexTensor.data())[0];
+
+                        document.getElementById("result").innerText = "Prediction: " + (labels[index] || "Unknown");
+                    };
                 };
                 reader.readAsDataURL(file);
-
-                // รอให้รูปโหลดแล้วประมวลผล
-                let inputTensor = await processImage(imgElement);
-                let outputTensor = model.predict(inputTensor);
-                let outputArray = await outputTensor.data();
-
-                let indexTensor = tf.argMax(outputTensor, 1);
-                let index = (await indexTensor.data())[0];
-
-                document.getElementById("result").innerText = "Prediction: " + (labels[index] || "Unknown");
             }
         });
-
-        loadModel();
     </script>
 </body>
 </html>
